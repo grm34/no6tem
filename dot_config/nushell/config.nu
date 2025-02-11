@@ -8,10 +8,11 @@ $env.config.buffer_editor = "helix"
 load-env {
   "LANG": "en_US.UTF-8",
   "KEYMAP": "fr",
+  "TERM": "kitty",
   "EDITOR": "helix",
   "PAGER": "most",
-  "TERM": "kitty",
-  "DELTA_PAGER": "less -R"
+  "MANPAGER": "most",
+  "DELTA_PAGER": "less -R",
   "DIFFPROG": "delta"
 }
 
