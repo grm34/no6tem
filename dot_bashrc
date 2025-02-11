@@ -10,3 +10,6 @@ alias grep='grep --color=auto'
 PS1='[\u@\h \W]\$ '
 
 source /home/keyzer/.config/broot/launcher/bash/br
+export HISTCONTROL=ignoreboth:erasedups
+export HISTIGNORE="ls:ps:history"
+
