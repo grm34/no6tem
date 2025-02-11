@@ -1,0 +1,7 @@
+#
+# ~/.bash_profile
+#
+
+[[ -f ~/.bashrc ]] && . "$HOME/.bashrc"
+
+source /home/keyzer/.config/broot/launcher/bash/br

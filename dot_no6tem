@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+# Arch Linux no6tem > by darkmaster @grm34.
+
+set -e
+
+# Settings.
+user="keyzer"
+host="no6tem"
+timezone="Europe/Paris"
+lang="en_US.UTF-8"
+keymap="fr"
+font="Lat2-Terminus16"
+boot="/dev/sda1"
+swap="/dev/sda2"
+root="/dev/sda3"
+microcode="intel-ucode"
+dotfiles="https://github.com/grm34/no6tem"
+
+# Usage.
+printf -v usage '%s\n' "
+  # From USB Live
+  SSD Manager (LUKS):           bash no6tem prepare ssd
+  Install Arch Linux base:      bash no6tem install base
+  
+  # From Arch Linux
+  Install AUR Helper:           bash no6tem install aur_helper
+  Install Firmware Modules:     bash no6tem install firmware_modules
+  Install Core Utilities:       bash no6tem install core_utilities
+  Install Intel GPU Drivers:    bash no6tem install intel_gpu_drivers
+  Install Sound System:         bash no6tem install sound_system
+  Install Multimedia Support:   bash no6tem install multimedia_support
+  Install GUI Libraries:        bash no6tem install gui_libraries
+  Install Themes & Fonts:       bash no6tem install themes_fonts
+  Install Terminal & Shell:     bash no6tem install terminal_shell
+  Install File Manager:         bash no6tem install file_manager
+  Install Text Editor:          bash no6tem install text_editor
+  Install User Applications:    bash no6tem install user_apps
+  Install Tiling Compositor:    bash no6tem install tiling_compositor
+  Install Status Bar:           bash no6tem install status_bar
+  Install Login Manager:        bash no6tem install login_manager
+  Install Dotfiles:             bash no6tem install dotfiles"
+
+
+# SSD Drive Manager
+####################
+
+ssd_manager() {
+  printf '\n%s\n' "Warning: ALL DATA WILL BE LOST!"
+  sleep 3s
+  mkfs.ext4 "$root"
+  cryptsetup -v luksFormat "$root"
+  cryptsetup open "$root" root
+  mkfs.ext4 /dev/mapper/root
+  mkfs.fat -F 32 "$boot"
+  mkswap "$swap"
+  mount /dev/mapper/root /mnt
+  mount --mkdir "$boot" /mnt/boot
+  swapon "$swap"
+}
+
+
+# Arch Linux Base System
+#########################
+
+base() {
+  timedatectl set-timezone "$timezone"
+  
+  # System.
+  pacstrap -K /mnt base base-devel linux linux-firmware
+  genfstab -U /mnt >> /mnt/etc/fstab
+  chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
+
+  # Configure.
+  ln -sf /mnt/usr/share/zoneinfo/"$timezone" /mnt/etc/localtime
+  sed -i "s/#${lang} UTF-8/${lang} UTF-8/g" /mnt/etc/locale.gen
+  chroot "locale-gen"
+  printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
+  printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
+    > /mnt/etc/vconsole.conf
+  printf '%s' "$host" > /mnt/etc/hostname
+  printf '%s\n%s\n%s' "127.0.0.1 localhost"\
+    "::1       localhost" "127.0.1.1 $host.localdomain $host"\
+    > /mnt/etc/hosts
+  sed -i "s/#Color/Color/g" /mnt/etc/pacman.conf
+  sed -i\
+    "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
+    /mnt/etc/pacman.conf
+  sed -i\
+    "s/block filesystems/block encrypt filesystems/g"\
+    /mnt/etc/mkinitcpio.conf
+
+  # Requirements.
+  chroot "pacman --needed --noconfirm -S\
+    $microcode reflector hdparm networkmanager man man-db"
+  chroot "systemctl enable NetworkManager.service"
+  chroot "systemctl enable reflector.timer"
+  chroot "systemctl enable fstrim.timer"
+  chroot "mkinitcpio -P"
+
+  # Bootloader.
+  chroot "bootctl install"
+  local uuid
+  uuid="$(blkid | grep $root | cut -d ' ' -f 2)"
+  printf '%s\n%s\n%s\n%s' "default arch.conf" "timeout 3"\
+    "console-mode max" "editor no" > /mnt/boot/loader/loader.conf
+  printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux"\
+    "linux /vmlinuz-linux" "initrd /${microcode}.img"\
+    "initrd /initramfs-linux.img"\
+    "options cryptdevice=${uuid//\"}:root root=/dev/mapper/root rw i915.enable_dpcd_backlight=1"\
+    > /mnt/boot/loader/entries/arch.conf
+  cp /mnt/boot/loader/entries/arch.conf\
+    /mnt/boot/loader/entries/arch-fallback.conf
+  sed -i "s/Arch Linux/Arch Linux (fallback initramfs)/g"\
+    /mnt/boot/loader/entries/arch-fallback.conf
+  sed -i "s/initramfs-linux/initramfs-linux-fallback/g"\
+    /mnt/boot/loader/entries/arch-fallback.conf
+
+  # User.
+  chroot "useradd -m $user"
+  printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
+  chroot "usermod -aG video,systemd-journal $user"
+  printf '\n%s' "Enter a password for root !"
+  chroot "passwd"
+  printf '\n%s' "Enter a password for $user !"
+  chroot "passwd $user"
+  cp -rf no6tem dotfiles "/mnt/home/$user/"
+  chroot\
+    "mkdir /home/$user/{dev,docs,downloads,music,pictures,public,videos}"
+  chroot "chown -R $user:$user /home/$user/*"
+
+  # Reboot.
+  umount -R /mnt
+  swapoff "$swap"
+  printf '\n%s\n%s\n'\
+    "Note: Arch Linux base successfuly installed!"\
+    "Warning: REBOOT SYSTEM BEFORE NEXT STEP!"
+}
+
+
+# Arch Linux no6tem
+####################
+
+aur_helper() {
+  sudo timedatectl set-timezone "$timezone"
+  sudo pacman --noconfirm --needed -S git cmake rustup
+  rustup default stable
+  cd && git clone https://aur.archlinux.org/paru.git
+  cd paru && makepkg -si
+  cd && rm -rf paru
+}
+
+firmware_modules() {
+  paru --noconfirm --needed -S\
+    mkinitcpio-firmware mkinitcpio-numlock
+  sudo sed -i "s/consolefont block/consolefont numlock block/g"\
+    /etc/mkinitcpio.conf
+  sudo mkinitcpio -P
+}
+
+core_utilities() {
+  paru --noconfirm --needed -S uutils-coreutils
+}
+
+intel_gpu_drivers() {
+  paru --noconfirm --needed -S\
+    mesa intel-media-driver intel-gpu-tools vulkan-intel\
+    vulkan-tools vulkan-headers
+}
+
+sound_system() {
+  paru --noconfirm --needed -S\
+    pipewire pipewire-audio pipewire-alsa pipewire-pulse\
+    pipewire-jack
+}
+
+multimedia_support() {
+  paru --noconfirm --needed -S\
+    ffmpeg gstreamer gsound gst-libav gst-plugins-base\
+    gst-plugins-good gst-plugins-bad gst-plugins-ugly\
+    mediainfo mpv
+}
+
+gui_libraries() {
+  paru --noconfirm --needed -S\
+    gtk3 gtk4 nwg-look qt5-wayland qt6-wayland qt5ct qt6ct
+}
+
+themes_fonts() {
+  paru --noconfirm --needed -S\
+    awesome-terminal-fonts noto-fonts noto-fonts-emoji\
+    ttf-noto-nerd ttf-ubuntu-nerd ttf-jetbrains-mono-nerd\
+    ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-mono\
+    papirus-icon-theme capitaine-cursors breeze-gtk\
+    adwaita-qt5 adwaita-qt6
+}
+
+terminal_shell() {
+  paru --noconfirm --needed -S\
+    kitty nushell starship vivid zellij btop broot exa duf\
+    dust bat most git-delta chafa bandwhich neofetch macchina\
+    zoxide fzf procs bottom diskonaut kmon
+}
+
+file_manager() {
+  paru --noconfirm --needed -S\
+    thunar catfish gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc\
+    yazi tumbler thunar-volman thunar-archive-plugin\
+    thunar-media-tags-plugin ffmpegthumbnailer xarchiver\
+    android-file-transfer xdg-user-dirs
+}
+
+text_editor() {
+  paru --noconfirm --needed -S\
+    helix bash-language-server hyprls-git jq-lsp tokei\
+    bash-completion shellcheck pkgbuild-language-server\
+    yaml-language-server marksman rust-analyzer ruff
+  cargo install --git https://github.com/euclio/mdpls
+}
+
+user_apps() {
+  paru --noconfirm --needed -S\
+    cromite-bin transmission-gtk masterpdfeditor yt-dlp\
+    tutanota-desktop-bin feh gimp freetube-bin termusic\
+    sniffnet simplex-desktop-bin
+}
+
+tiling_compositor() {
+  paru --noconfirm --needed -S\
+    hypridle hyprland hyprlock hyprpaper hyprpicker\
+    hyprpolkitagent hyprsunset hyprsysteminfo\
+    xdg-desktop-portal-hyprland sirula-git
+    systemctl --user import-environment\
+      WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+    dbus-update-activation-environment --systemd\
+      WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
+}
+
+status_bar() {
+  paru --noconfirm --needed -S\
+    ags-hyprpanel-git wireplumber libgtop bluez bluez-utils\
+    btop networkmanager dart-sass wl-clipboard brightnessctl\
+    swww python upower pacman-contrib power-profiles-daemon\
+    gvfs python-pywal grimblast-git gpu-screen-recorder\
+    matugen-bin
+    sed -i\
+      's|Pictures/Screenshots|pictures/screenshots|g'\
+      /usr/share/hyprpanel/scripts/snapshot.sh
+    sed -i\
+      's|Videos/Screencasts|videos/screencasts|g'\
+      /usr/share/hyprpanel/scripts/screen_record.sh
+}
+
+login_manager() {
+  paru --noconfirm --needed -S greetd-tuigreet
+  sudo sed -i "s|command =|#command =|g" /etc/greetd/config.toml
+  sudo sed -i "s|user =|#user =|g" /etc/greetd/config.toml
+  printf '%s\n%s'\
+    "command = \"tuigreet --user-menu --cmd Hyprland\""\
+    "user = \"$user\"" | sudo tee -a /etc/greetd/config.toml
+  systemctl enable greetd.service
+}
+
+dotfiles() {
+  paru --noconfirm --needed -S github-cli chezmoi
+  chezmoi init "$dotfiles"
+  [[ $user != "keyzer" ]] &&
+    grep -RiIl "keyzer" "/home/$user/.local/share/chezmoi" |\
+      xargs sed -i "s|keyzer|$user|g"
+  chezmoi apply -v
+  broot --set-install-state installed
+  broot --install
+  git clone --depth=1 https://github.com/nushell/nu_scripts
+  mv nu_scripts "/home/$user/dev/"
+  rm -rf "/home/$user/no6tem"
+  chsh -s /bin/nu
+}
+
+
+# Run the script
+#################
+
+case "$@" in
+  "prepare ssd") ssd_manager ;;
+  "install base") base ;;
+  "install aur_helper") aur_helper ;;
+  "install firmware_modules") firmware_modules ;;
+  "install core_utilities") core_utilities ;;
+  "install intel_gpu_drivers") intel_gpu_drivers ;;
+  "install sound_system") sound_system ;;
+  "install multimedia_support") multimedia_support ;;
+  "install gui_libraries") gui_libraries ;;
+  "install themes_fonts") themes_fonts ;;
+  "install terminal_shell") terminal_shell ;;
+  "install file_manager") file_manager ;;
+  "install text_editor") text_editor ;;
+  "install user_apps") user_apps ;;
+  "install tiling_compositor") tiling_compositor ;;
+  "install status_bar") status_bar ;;
+  "install login_manager") login_manager ;;
+  "install dotfiles") dotfiles ;;
+  *) printf '%s' "$usage"
+esac
+
