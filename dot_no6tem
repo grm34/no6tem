@@ -103,7 +103,7 @@ base() {
   uuid="$(blkid | grep $root | cut -d ' ' -f 2)"
   printf '%s\n%s\n%s\n%s' "default arch.conf" "timeout 3"\
     "console-mode max" "editor no" > /mnt/boot/loader/loader.conf
-  printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux"\
+  printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux no6tem"\
     "linux /vmlinuz-linux" "initrd /${microcode}.img"\
     "initrd /initramfs-linux.img"\
     "options cryptdevice=${uuid//\"}:root root=/dev/mapper/root rw i915.enable_dpcd_backlight=1"\
