@@ -11,7 +11,6 @@ load-env {
   "TERM": "kitty",
   "EDITOR": "helix",
   "PAGER": "most",
-  "MANPAGER": "most",
   "DELTA_PAGER": "less -R",
   "DIFFPROG": "delta"
 }
