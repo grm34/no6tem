@@ -10,9 +10,8 @@ timezone="Europe/Paris"
 lang="en_US.UTF-8"
 keymap="fr"
 font="Lat2-Terminus16"
-efi="/dev/sda1"
-boot="/dev/sda2"
-no6tem="/dev/sda3"
+boot="/dev/sda1" # Physical boot partition.
+no6tem="/dev/sda2" # Physical system partition.
 home="true" # Set it to "false" to disable home partition creation.
 root_size="50G" # Required only when the home partition is enabled.
 swap_size="4G" # Set it to "false" to disable swap file.
@@ -24,12 +23,11 @@ dotfiles="https://github.com/grm34/no6tem"
 printf -v usage '%s\n' "
   Welcome in Arch Linux no6tem installer!
 
-  The only requirement: create 3 partitions and apply the settings.
+  The only requirement: create 2 partitions and apply the settings.
   For LVM on LUKS use the following scheme and run SSD Manager:
 
     1: create 500MB partition and set the type to 'EFI' 
-    2: create 500MB partition and set the type to 'Linux Filesystem'
-    2: create (free space) partition and set the type to 'Linux LVM'
+    2: create (free) partition and set the type to 'Linux LVM'
   
   Follow then the instructions listed below:
   (rebooting is necessary after the base install)
@@ -65,8 +63,7 @@ printf -v usage '%s\n' "
 ssd_manager() {
   printf '\n%s\n' "Warning: ALL DATA WILL BE LOST!"
   sleep 3s
-  mkfs.fat -F 32 "$efi"
-  mkfs.ext4 "$boot"
+  mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
   cryptsetup -v luksFormat "$no6tem"
   cryptsetup open "$no6tem" arch-no6tem
@@ -85,7 +82,6 @@ ssd_manager() {
     mount /dev/no6tem/root /mnt
   fi    
   mount --mkdir "$boot" /mnt/boot
-  mount --mkdir "$efi" /mnt/boot/EFI
 }
 
 
@@ -165,10 +161,9 @@ base() {
   fi
 
   # Reboot.
-  umount -R /mnt &&
-    printf '\n%s\n%s\n'\
-      "Note: Arch Linux base successfuly installed!"\
-      "Warning: REBOOT THE SYSTEM BEFORE NEXT STEP!"
+  umount -R /mnt && printf '\n%s\n%s\n'\
+    "Note: Arch Linux base successfuly installed!"\
+    "Warning: REBOOT THE SYSTEM BEFORE NEXT STEP!"
 }
 
 
