@@ -23,10 +23,8 @@ dotfiles="https://github.com/grm34/no6tem"
 printf -v usage '%s\n' "
   Welcome in Arch Linux no6tem installer!
 
-  The only requirement:
-
-    Create 2 partitions and apply the settings accordingly.
-    For LVM on LUKS use the following scheme and run SSD Manager:
+  The only requirement is to create 2 partitions:
+  (and edit the settings accordingly)
 
     boot: create 500MB partition and set the type to 'EFI' 
     no6tem: create (free) partition and set the type to 'Linux LVM'
@@ -65,9 +63,9 @@ ssd_manager() {
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
   cryptsetup -v luksFormat "$no6tem"
-  cryptsetup open "$no6tem" arch-no6tem
-  pvcreate /dev/mapper/arch-no6tem
-  vgcreate no6tem /dev/mapper/arch-no6tem
+  cryptsetup open "$no6tem" no6tem
+  pvcreate /dev/mapper/no6tem
+  vgcreate no6tem /dev/mapper/no6tem
   if [[ $home == "true" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
@@ -133,7 +131,7 @@ base() {
     "title Arch Linux no6tem"\
     "linux /vmlinuz-linux" "initrd /${microcode}.img"\
     "initrd /initramfs-linux.img"\
-    "options cryptdevice=${uuid//\"}:root $root rw $boot_options"\
+    "options cryptdevice=${uuid//\"}:no6tem $root rw $boot_options"\
     > /mnt/boot/loader/entries/arch.conf
   cp /mnt/boot/loader/entries/arch.conf\
     /mnt/boot/loader/entries/arch-fallback.conf
