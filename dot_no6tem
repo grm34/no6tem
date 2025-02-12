@@ -246,7 +246,8 @@ text_editor() {
 user_apps() {
   paru --noconfirm --needed -S\
     cromite-bin transmission-gtk masterpdfeditor feh yt-dlp termusic\
-    tutanota-desktop-bin freetube-bin gimp sniffnet simplex-desktop-bin
+    tutanota-desktop-bin freetube-bin gimp sniffnet qemu-desktop\
+    gnome-boxes simplex-desktop-bin
 }
 
 tiling_compositor() {
