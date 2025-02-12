@@ -100,12 +100,13 @@ base() {
   sed -i "s/#${lang} UTF-8/${lang} UTF-8/g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
-  printf '%s\n%s'\
-    "KEYMAP=$keymap" "FONT=$font" > /mnt/etc/vconsole.conf
+  printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
+    > /mnt/etc/vconsole.conf
   printf '%s' "$host" > /mnt/etc/hostname
   printf '%s\n%s\n%s'\
     "127.0.0.1 localhost"\
-    "::1       localhost" "127.0.1.1 $host.localdomain $host"\
+    "::1       localhost"\
+    "127.0.1.1 $host.localdomain $host"\
     > /mnt/etc/hosts
   sed -i "s/#Color/Color/g" /mnt/etc/pacman.conf
   sed -i "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
@@ -124,14 +125,17 @@ base() {
   # Bootloader.
   chroot "bootctl install"
   printf '%s\n%s\n%s\n%s'\
-    "default arch.conf" "timeout 3"\
-    "console-mode max" "editor no"\
+    "default arch.conf"\
+    "timeout 3"\
+    "console-mode max"\
+    "editor no"\
     > /mnt/boot/loader/loader.conf
   root="root=/dev/no6tem/root"
   uuid="$(blkid | grep $no6tem | cut -d ' ' -f 2)"
   printf '%s\n%s\n%s\n%s\n%s'\
     "title Arch Linux no6tem"\
-    "linux /vmlinuz-linux" "initrd /${microcode}.img"\
+    "linux /vmlinuz-linux"\
+    "initrd /${microcode}.img"\
     "initrd /initramfs-linux.img"\
     "options cryptdevice=${uuid//\"}:no6tem $root rw $boot_options"\
     > /mnt/boot/loader/entries/arch.conf
