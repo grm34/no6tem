@@ -14,7 +14,7 @@ boot="/dev/sda1"
 no6tem="/dev/sda2"
 home="true" # Set it to "false" to disable home partition creation.
 root_size="50G" # Required only when the home partition is enabled.
-swap_size="4G" # Set it to "false" to disable swap file.
+swap_size="8G" # Set it to "false" to disable swap file.
 microcode="intel-ucode"
 boot_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
@@ -142,8 +142,8 @@ base() {
 
   # Swap file.
   if [[ $swap_size != "false" ]]; then
-    chroot "mkswap -U clear --size $swap_size --file /no6tem_swap"
-    chroot "swapon /no6tem_swap"
+    chroot "mkswap -U clear --size $swap_size --file /no6tem-swapfile"
+    chroot "swapon /no6tem-swapfile"
     printf '%s' "/no6tem_swap none swap defaults 0 0" >> /mnt/etc/fstab
   fi
 
@@ -173,8 +173,7 @@ aur_helper() {
 }
 
 firmware_modules() {
-  paru --noconfirm --needed -S\
-    mkinitcpio-firmware mkinitcpio-numlock
+  paru --noconfirm --needed -S mkinitcpio-firmware mkinitcpio-numlock
   sudo sed -i "s/consolefont block/consolefont numlock block/g"\
     /etc/mkinitcpio.conf
   sudo mkinitcpio -P
@@ -193,14 +192,13 @@ intel_gpu_drivers() {
 sound_system() {
   paru --noconfirm --needed -S\
     pipewire pipewire-audio pipewire-alsa pipewire-pulse\
-    pipewire-jack
+    pipewire-jack wireplumber
 }
 
 multimedia_support() {
   paru --noconfirm --needed -S\
-    ffmpeg gstreamer gsound gst-libav gst-plugins-base\
-    gst-plugins-good gst-plugins-bad gst-plugins-ugly\
-    mediainfo mpv
+    ffmpeg mpv gstreamer gsound gst-libav gst-plugins-base\
+    gst-plugins-good gst-plugins-bad gst-plugins-ugly mediainfo
 }
 
 gui_libraries() {
@@ -210,48 +208,44 @@ gui_libraries() {
 
 themes_fonts() {
   paru --noconfirm --needed -S\
-    awesome-terminal-fonts noto-fonts noto-fonts-emoji\
-    ttf-noto-nerd ttf-ubuntu-nerd ttf-jetbrains-mono-nerd\
-    ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-mono\
-    papirus-icon-theme capitaine-cursors breeze-gtk\
-    adwaita-qt5 adwaita-qt6
+    awesome-terminal-fonts noto-fonts noto-fonts-emoji ttf-noto-nerd\
+    ttf-ubuntu-nerd ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols\
+    ttf-nerd-fonts-symbols-mono papirus-icon-theme capitaine-cursors\
+    breeze-gtk adwaita-qt5 adwaita-qt6
 }
 
 terminal_shell() {
   paru --noconfirm --needed -S\
-    kitty nushell starship vivid zellij btop broot exa duf\
-    dust bat most git-delta chafa bandwhich neofetch macchina\
-    zoxide fzf procs bottom diskonaut kmon
+    kitty nushell starship vivid zellij btop broot exa duf dust bat\
+    most git-delta chafa bandwhich neofetch macchina zoxide fzf procs\
+    bottom diskonaut kmon
 }
 
 file_manager() {
   paru --noconfirm --needed -S\
-    thunar catfish gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc\
-    yazi tumbler thunar-volman thunar-archive-plugin\
-    thunar-media-tags-plugin ffmpegthumbnailer xarchiver\
-    android-file-transfer xdg-user-dirs
+    yazi thunar catfish gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc tumbler\
+    ffmpegthumbnailer thunar-volman thunar-archive-plugin xarchiver\
+    thunar-media-tags-plugin android-file-transfer xdg-user-dirs
 }
 
 text_editor() {
   paru --noconfirm --needed -S\
-    helix bash-language-server hyprls-git jq-lsp tokei\
-    bash-completion shellcheck pkgbuild-language-server\
-    yaml-language-server marksman rust-analyzer ruff
+    helix bash-language-server hyprls-git jq-lsp tokei bash-completion\
+    shellcheck pkgbuild-language-server yaml-language-server marksman\
+    rust-analyzer ruff
   cargo install --git https://github.com/euclio/mdpls
 }
 
 user_apps() {
   paru --noconfirm --needed -S\
-    cromite-bin transmission-gtk masterpdfeditor yt-dlp\
-    tutanota-desktop-bin feh gimp freetube-bin termusic\
-    sniffnet simplex-desktop-bin
+    cromite-bin transmission-gtk masterpdfeditor feh yt-dlp termusic\
+    tutanota-desktop-bin freetube-bin gimp sniffnet simplex-desktop-bin
 }
 
 tiling_compositor() {
   paru --noconfirm --needed -S\
-    hypridle hyprland hyprlock hyprpaper hyprpicker\
-    hyprpolkitagent hyprsunset hyprsysteminfo\
-    xdg-desktop-portal-hyprland sirula-git
+    hypridle hyprland hyprlock hyprpaper hyprpicker hyprpolkitagent\
+    hyprsunset hyprsysteminfo xdg-desktop-portal-hyprland sirula-git
     systemctl --user import-environment\
       WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
     dbus-update-activation-environment --systemd\
@@ -260,16 +254,12 @@ tiling_compositor() {
 
 status_bar() {
   paru --noconfirm --needed -S\
-    ags-hyprpanel-git wireplumber libgtop bluez bluez-utils\
-    btop networkmanager dart-sass wl-clipboard brightnessctl\
-    swww python upower pacman-contrib power-profiles-daemon\
-    gvfs python-pywal grimblast-git gpu-screen-recorder\
-    matugen-bin
-    sed -i\
-      's|Pictures/Screenshots|pictures/screenshots|g'\
+    ags-hyprpanel-git libgtop bluez bluez-utils dart-sass swww python\
+    wl-clipboard brightnessctl upowerpacman-contrib python-pywal\
+    power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder
+    sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
       /usr/share/hyprpanel/scripts/snapshot.sh
-    sed -i\
-      's|Videos/Screencasts|videos/screencasts|g'\
+    sed -i 's|Videos/Screencasts|videos/screencasts|g'\
       /usr/share/hyprpanel/scripts/screen_record.sh
 }
 
@@ -286,9 +276,11 @@ login_manager() {
 dotfiles() {
   paru --noconfirm --needed -S github-cli chezmoi
   chezmoi init "$dotfiles"
-  [[ $user != "keyzer" ]] &&
-    grep -RiIl "keyzer" "/home/$user/.local/share/chezmoi" |\
-      xargs sed -i "s|keyzer|$user|g"
+  if [[ $user != "keyzer" ]]; then
+    grep -RiIl\
+      "keyzer" "/home/$user/.local/share/chezmoi"\
+      | xargs sed -i "s|keyzer|$user|g"
+  fi
   chezmoi apply -v
   broot --set-install-state installed
   broot --install
