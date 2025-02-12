@@ -12,9 +12,9 @@ keymap="fr"
 font="Lat2-Terminus16"
 boot="/dev/sda1"
 no6tem="/dev/sda2"
-home="true" # Set it to "false" to disable home partition creation.
-root_size="50G" # Required only when the home partition is enabled.
-swap_size="8G" # Set it to "false" to disable swap file.
+single_root_partition="false"
+root_size="50G" # when single root partition is False.
+swap_size="8G" # set it to "false" to disable swapfile.
 microcode="intel-ucode"
 boot_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
@@ -59,6 +59,7 @@ printf -v usage '%s\n' "
 
 # SSD Manager (LVM on LUKS)
 ############################
+
 ssd_manager() {
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
@@ -66,7 +67,7 @@ ssd_manager() {
   cryptsetup open "$no6tem" no6tem
   pvcreate /dev/mapper/no6tem
   vgcreate no6tem /dev/mapper/no6tem
-  if [[ $home == "true" ]]; then
+  if [[ $single_root_partition == "false" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
     mkfs.ext4 /dev/no6tem/root
@@ -82,8 +83,9 @@ ssd_manager() {
 }
 
 
-# Arch Linux Base System
-#########################
+# Arch Linux base
+##################
+
 base() {
   local root uuid folders
   timedatectl set-timezone "$timezone"
@@ -163,6 +165,7 @@ base() {
 
 # Arch Linux no6tem
 ####################
+
 aur_helper() {
   sudo timedatectl set-timezone "$timezone"
   sudo pacman --noconfirm --needed -S git cmake rustup
@@ -310,8 +313,9 @@ all() {
 }
 
 
-# Run the script
-#################
+# no6tem Core
+##############
+
 confirm() {
   read -p "Are you sure? " -n 1 -r
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
