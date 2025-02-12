@@ -97,7 +97,7 @@ base() {
 
   # Configure.
   ln -sf /mnt/usr/share/zoneinfo/"$timezone" /mnt/etc/localtime
-  sed -i "s/#${lang} UTF-8/${lang} UTF-8/g" /mnt/etc/locale.gen
+  sed -i "s|#${lang} UTF-8|${lang} UTF-8|g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
   printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
@@ -108,10 +108,10 @@ base() {
     "::1       localhost"\
     "127.0.1.1 $host.localdomain $host"\
     > /mnt/etc/hosts
-  sed -i "s/#Color/Color/g" /mnt/etc/pacman.conf
-  sed -i "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
+  sed -i "s|#Color|Color|g" /mnt/etc/pacman.conf
+  sed -i "s|Architecture = auto|Architecture = auto\nILoveCandy|g"\
     /mnt/etc/pacman.conf
-  sed -i "s/block filesystems/block encrypt lvm2 filesystems/g"\
+  sed -i "s|block filesystems|block encrypt lvm2 filesystems|g"\
     /mnt/etc/mkinitcpio.conf
 
   # Requirements.
@@ -141,9 +141,9 @@ base() {
     > /mnt/boot/loader/entries/arch.conf
   cp /mnt/boot/loader/entries/arch.conf\
     /mnt/boot/loader/entries/arch-fallback.conf
-  sed -i "s/Arch Linux/Arch Linux (fallback initramfs)/g"\
+  sed -i "s|Arch Linux|Arch Linux (fallback initramfs)|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
-  sed -i "s/initramfs-linux/initramfs-linux-fallback/g"\
+  sed -i "s|initramfs-linux|initramfs-linux-fallback|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
 
   # Swap file.
@@ -181,7 +181,7 @@ aur_helper() {
 
 firmware_modules() {
   paru --noconfirm --needed -S mkinitcpio-firmware mkinitcpio-numlock
-  sudo sed -i "s/consolefont block/consolefont numlock block/g"\
+  sudo sed -i "s|consolefont block|consolefont numlock block|g"\
     /etc/mkinitcpio.conf
   sudo mkinitcpio -P
 }
