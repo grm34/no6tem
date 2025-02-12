@@ -10,32 +10,34 @@ timezone="Europe/Paris"
 lang="en_US.UTF-8"
 keymap="fr"
 font="Lat2-Terminus16"
-boot="/dev/sda1" # Physical boot partition.
-no6tem="/dev/sda2" # Physical system partition.
+boot="/dev/sda1"
+no6tem="/dev/sda2"
 home="true" # Set it to "false" to disable home partition creation.
 root_size="50G" # Required only when the home partition is enabled.
 swap_size="4G" # Set it to "false" to disable swap file.
 microcode="intel-ucode"
-bootloader_options="i915.enable_dpcd_backlight=1"
+boot_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
 
 # Usage.
 printf -v usage '%s\n' "
   Welcome in Arch Linux no6tem installer!
 
-  The only requirement: create 2 partitions and apply the settings.
-  For LVM on LUKS use the following scheme and run SSD Manager:
+  The only requirement:
 
-    1: create 500MB partition and set the type to 'EFI' 
-    2: create (free) partition and set the type to 'Linux LVM'
-  
+    Create 2 partitions and apply the settings accordingly.
+    For LVM on LUKS use the following scheme and run SSD Manager:
+
+    boot: create 500MB partition and set the type to 'EFI' 
+    no6tem: create (free) partition and set the type to 'Linux LVM'
+
   Follow then the instructions listed below:
   (rebooting is necessary after the base install)
 
   # From USB Live
   SSD Manager (LVM on LUKS):    bash no6tem prepare ssd
   Install Arch Linux base:      bash no6tem install base
-  
+
   # From Arch Linux
   Install all steps below:      bash no6tem install all
   ------------------------      ------------------------
@@ -59,10 +61,7 @@ printf -v usage '%s\n' "
 
 # SSD Manager (LVM on LUKS)
 ############################
-
 ssd_manager() {
-  printf '\n%s\n' "Warning: ALL DATA WILL BE LOST!"
-  sleep 3s
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
   cryptsetup -v luksFormat "$no6tem"
@@ -70,14 +69,14 @@ ssd_manager() {
   pvcreate /dev/mapper/arch-no6tem
   vgcreate no6tem /dev/mapper/arch-no6tem
   if [[ $home == "true" ]]; then
-    lvcreate  -L "$root_size" no6tem -n root
+    lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
     mkfs.ext4 /dev/no6tem/root
     mkfs.ext4 /dev/no6tem/home
     mount /dev/no6tem/root /mnt
     mount --mkdir /dev/no6tem/home /mnt/home
   else
-    lvcreate  -L 100%FREE no6tem -n root
+    lvcreate -L 100%FREE no6tem -n root
     mkfs.ext4 /dev/no6tem/root
     mount /dev/no6tem/root /mnt
   fi    
@@ -87,8 +86,8 @@ ssd_manager() {
 
 # Arch Linux Base System
 #########################
-
 base() {
+  local root uuid folders
   timedatectl set-timezone "$timezone"
   chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
   
@@ -101,18 +100,17 @@ base() {
   sed -i "s/#${lang} UTF-8/${lang} UTF-8/g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
-  printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
-    > /mnt/etc/vconsole.conf
+  printf '%s\n%s'\
+    "KEYMAP=$keymap" "FONT=$font" > /mnt/etc/vconsole.conf
   printf '%s' "$host" > /mnt/etc/hostname
-  printf '%s\n%s\n%s' "127.0.0.1 localhost"\
+  printf '%s\n%s\n%s'\
+    "127.0.0.1 localhost"\
     "::1       localhost" "127.0.1.1 $host.localdomain $host"\
     > /mnt/etc/hosts
   sed -i "s/#Color/Color/g" /mnt/etc/pacman.conf
-  sed -i\
-    "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
+  sed -i "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
     /mnt/etc/pacman.conf
-  sed -i\
-    "s/block filesystems/block encrypt lvm2 filesystems/g"\
+  sed -i "s/block filesystems/block encrypt lvm2 filesystems/g"\
     /mnt/etc/mkinitcpio.conf
 
   # Requirements.
@@ -125,14 +123,17 @@ base() {
 
   # Bootloader.
   chroot "bootctl install"
-  local uuid
+  printf '%s\n%s\n%s\n%s'\
+    "default arch.conf" "timeout 3"\
+    "console-mode max" "editor no"\
+    > /mnt/boot/loader/loader.conf
+  root="root=/dev/no6tem/root"
   uuid="$(blkid | grep $no6tem | cut -d ' ' -f 2)"
-  printf '%s\n%s\n%s\n%s' "default arch.conf" "timeout 3"\
-    "console-mode max" "editor no" > /mnt/boot/loader/loader.conf
-  printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux no6tem"\
+  printf '%s\n%s\n%s\n%s\n%s'\
+    "title Arch Linux no6tem"\
     "linux /vmlinuz-linux" "initrd /${microcode}.img"\
     "initrd /initramfs-linux.img"\
-    "options cryptdevice=${uuid//\"}:root root=/dev/mapper/root rw $bootloader_options"\
+    "options cryptdevice=${uuid//\"}:root $root rw $boot_options"\
     > /mnt/boot/loader/entries/arch.conf
   cp /mnt/boot/loader/entries/arch.conf\
     /mnt/boot/loader/entries/arch-fallback.conf
@@ -140,6 +141,13 @@ base() {
     /mnt/boot/loader/entries/arch-fallback.conf
   sed -i "s/initramfs-linux/initramfs-linux-fallback/g"\
     /mnt/boot/loader/entries/arch-fallback.conf
+
+  # Swap file.
+  if [[ $swap_size != "false" ]]; then
+    chroot "mkswap -U clear --size $swap_size --file /no6tem_swap"
+    chroot "swapon /no6tem_swap"
+    printf '%s' "/no6tem_swap none swap defaults 0 0" >> /mnt/etc/fstab
+  fi
 
   # User.
   chroot "useradd -m -G video,systemd-journal $user"
@@ -149,27 +157,14 @@ base() {
   printf '\n%s' "Enter a password for $user !"
   chroot "passwd $user"
   cp no6tem "/mnt/home/$user/"
-  chroot\
-    "mkdir /home/$user/{dev,docs,downloads,music,pictures,public,videos}"
+  folders="dev,docs,downloads,music,pictures,public,videos"
+  chroot "mkdir /home/$user/{$folders}"
   chroot "chown -R $user:$user /home/$user/*"
-
-  # Swap file.
-  if [[ $swap_size != "false" ]]; then
-    chroot "mkswap -U clear --size $swap_size --file /no6tem_swap"
-    chroot "swapon /no6tem_swap"
-    printf '%s' "/no6tem_swap none swap defaults 0 0" >> /mnt/etc/fstab
-  fi
-
-  # Reboot.
-  umount -R /mnt && printf '\n%s\n%s\n'\
-    "Note: Arch Linux base successfuly installed!"\
-    "Warning: REBOOT THE SYSTEM BEFORE NEXT STEP!"
 }
 
 
 # Arch Linux no6tem
 ####################
-
 aur_helper() {
   sudo timedatectl set-timezone "$timezone"
   sudo pacman --noconfirm --needed -S git cmake rustup
@@ -306,10 +301,6 @@ dotfiles() {
 }
 
 all() {
-  printf '\n%s\n%s\n'\
-    "Installing Arch Linux no6tem..."\
-    "Note: you must be patient, this may take a while!"
-  sleep 3s
   aur_helper
   firmware_modules
   core_utilities
@@ -331,27 +322,44 @@ all() {
 
 # Run the script
 #################
+confirm() {
+  read -p "Are you sure? " -n 1 -r
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    return 1
+  else
+    echo; return 0
+  fi
+}
 
 case "$@" in
-  "prepare ssd") ssd_manager ;;
-  "install base") base ;;
-  "install aur_helper") aur_helper ;;
-  "install firmware_modules") firmware_modules ;;
-  "install core_utilities") core_utilities ;;
-  "install intel_gpu_drivers") intel_gpu_drivers ;;
-  "install sound_system") sound_system ;;
-  "install multimedia_support") multimedia_support ;;
-  "install gui_libraries") gui_libraries ;;
-  "install themes_fonts") themes_fonts ;;
-  "install terminal_shell") terminal_shell ;;
-  "install file_manager") file_manager ;;
-  "install text_editor") text_editor ;;
-  "install user_apps") user_apps ;;
-  "install tiling_compositor") tiling_compositor ;;
-  "install status_bar") status_bar ;;
-  "install login_manager") login_manager ;;
-  "install dotfiles") dotfiles ;;
-  "install all") all ;;
-  *) printf '%s' "$usage"
+  "prepare ssd")
+    printf '%s\n' "Warning: ALL DATA WILL BE LOST!"
+    confirm && ssd_manager ;;
+  "install base")
+    confirm && base && printf '\n%s\n%s\n'\
+      "Note: Arch Linux base successfuly installed!"\
+      "Warning: REBOOT THE SYSTEM BEFORE NEXT STEP!" ;;
+  "install aur_helper") confirm && aur_helper ;;
+  "install firmware_modules") confirm && firmware_modules ;;
+  "install core_utilities") confirm && core_utilities ;;
+  "install intel_gpu_drivers") confirm && intel_gpu_drivers ;;
+  "install sound_system") confirm && sound_system ;;
+  "install multimedia_support") confirm && multimedia_support ;;
+  "install gui_libraries") confirm && gui_libraries ;;
+  "install themes_fonts") confirm && themes_fonts ;;
+  "install terminal_shell") confirm && terminal_shell ;;
+  "install file_manager") confirm && file_manager ;;
+  "install text_editor") confirm && text_editor ;;
+  "install user_apps") confirm && user_apps ;;
+  "install tiling_compositor") confirm && tiling_compositor ;;
+  "install status_bar") confirm && status_bar ;;
+  "install login_manager") confirm && login_manager ;;
+  "install dotfiles") confirm && dotfiles ;;
+  "install all")
+    printf '\n%s\n%s\n'\
+      "Installing Arch Linux no6tem..."\
+      "Note: you must be patient, this may take a while!"
+    confirm && all ;;
+  *) printf '%s' "$usage" ;;
 esac
 
