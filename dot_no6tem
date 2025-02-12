@@ -14,6 +14,7 @@ boot="/dev/sda1"
 swap="/dev/sda2"
 root="/dev/sda3"
 microcode="intel-ucode"
+bootloader_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
 
 # Usage.
@@ -116,7 +117,7 @@ base() {
   printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux no6tem"\
     "linux /vmlinuz-linux" "initrd /${microcode}.img"\
     "initrd /initramfs-linux.img"\
-    "options cryptdevice=${uuid//\"}:root root=/dev/mapper/root rw i915.enable_dpcd_backlight=1"\
+    "options cryptdevice=${uuid//\"}:root root=/dev/mapper/root rw $bootloader_options"\
     > /mnt/boot/loader/entries/arch.conf
   cp /mnt/boot/loader/entries/arch.conf\
     /mnt/boot/loader/entries/arch-fallback.conf

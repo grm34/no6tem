@@ -92,7 +92,6 @@ def "no6tem update" [] {
     $"($env.HOME)/.config/gtk-3.0"
     $"($env.HOME)/.config/gtk-4.0"
     $"($env.HOME)/.config/helix"
-    $"($env.HOME)/.config/htop"
     $"($env.HOME)/.config/hypr"
     $"($env.HOME)/.config/hyprpanel"
     $"($env.HOME)/.config/kitty"
