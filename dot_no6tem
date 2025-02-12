@@ -18,6 +18,14 @@ dotfiles="https://github.com/grm34/no6tem"
 
 # Usage.
 printf -v usage '%s\n' "
+  Welcome in Arch Linux no6tem installer!
+
+  The only requirement is to create 3 partitions and
+  modify the settings accordingly.
+  
+  Follow then the instructions listed below:
+  (rebooting is necessary after the base install)
+
   # From USB Live
   SSD Manager (LUKS):           bash no6tem prepare ssd
   Install Arch Linux base:      bash no6tem install base
@@ -278,7 +286,7 @@ dotfiles() {
 }
 
 all() {
-  printf '/n%s/n'\
+  printf '\n%s\n%s\n'\
     "Installing Arch Linux no6tem..."\
     "Warning: be patient, this may take a while!"
   sleep 3s
