@@ -10,9 +10,12 @@ timezone="Europe/Paris"
 lang="en_US.UTF-8"
 keymap="fr"
 font="Lat2-Terminus16"
-boot="/dev/sda1"
-swap="/dev/sda2"
-root="/dev/sda3"
+efi="/dev/sda1"
+boot="/dev/sda2"
+no6tem="/dev/sda3"
+home="true" # Set it to "false" to disable home partition creation.
+root_size="50G" # Required only when the home partition is enabled.
+swap_size="4G" # Set it to "false" to disable swap file.
 microcode="intel-ucode"
 bootloader_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
@@ -21,14 +24,18 @@ dotfiles="https://github.com/grm34/no6tem"
 printf -v usage '%s\n' "
   Welcome in Arch Linux no6tem installer!
 
-  The only requirement is to create 3 partitions and
-  modify the settings accordingly.
+  The only requirement: create 3 partitions and apply the settings.
+  For LVM on LUKS use the following scheme and run SSD Manager:
+
+    1: create 500MB partition and set the type to 'EFI' 
+    2: create 500MB partition and set the type to 'Linux Filesystem'
+    2: create (free space) partition and set the type to 'Linux LVM'
   
   Follow then the instructions listed below:
   (rebooting is necessary after the base install)
 
   # From USB Live
-  SSD Manager (LUKS):           bash no6tem prepare ssd
+  SSD Manager (LVM on LUKS):    bash no6tem prepare ssd
   Install Arch Linux base:      bash no6tem install base
   
   # From Arch Linux
@@ -52,21 +59,33 @@ printf -v usage '%s\n' "
   Install Dotfiles:             bash no6tem install dotfiles"
 
 
-# SSD Drive Manager
-####################
+# SSD Manager (LVM on LUKS)
+############################
 
 ssd_manager() {
   printf '\n%s\n' "Warning: ALL DATA WILL BE LOST!"
   sleep 3s
-  mkfs.ext4 "$root"
-  cryptsetup -v luksFormat "$root"
-  cryptsetup open "$root" root
-  mkfs.ext4 /dev/mapper/root
-  mkfs.fat -F 32 "$boot"
-  mkswap "$swap"
-  mount /dev/mapper/root /mnt
+  mkfs.fat -F 32 "$efi"
+  mkfs.ext4 "$boot"
+  mkfs.ext4 "$no6tem"
+  cryptsetup -v luksFormat "$no6tem"
+  cryptsetup open "$no6tem" arch-no6tem
+  pvcreate /dev/mapper/arch-no6tem
+  vgcreate no6tem /dev/mapper/arch-no6tem
+  if [[ $home == "true" ]]; then
+    lvcreate  -L "$root_size" no6tem -n root
+    lvcreate -l 100%FREE no6tem -n home
+    mkfs.ext4 /dev/no6tem/root
+    mkfs.ext4 /dev/no6tem/home
+    mount /dev/no6tem/root /mnt
+    mount --mkdir /dev/no6tem/home /mnt/home
+  else
+    lvcreate  -L 100%FREE no6tem -n root
+    mkfs.ext4 /dev/no6tem/root
+    mount /dev/no6tem/root /mnt
+  fi    
   mount --mkdir "$boot" /mnt/boot
-  swapon "$swap"
+  mount --mkdir "$efi" /mnt/boot/EFI
 }
 
 
@@ -97,12 +116,12 @@ base() {
     "s/Architecture = auto/Architecture = auto\nILoveCandy/g"\
     /mnt/etc/pacman.conf
   sed -i\
-    "s/block filesystems/block encrypt filesystems/g"\
+    "s/block filesystems/block encrypt lvm2 filesystems/g"\
     /mnt/etc/mkinitcpio.conf
 
   # Requirements.
   chroot "pacman --needed --noconfirm -S\
-    $microcode reflector hdparm networkmanager man man-db"
+    $microcode lvm2 reflector hdparm networkmanager man man-db"
   chroot "systemctl enable NetworkManager.service"
   chroot "systemctl enable reflector.timer"
   chroot "systemctl enable fstrim.timer"
@@ -111,7 +130,7 @@ base() {
   # Bootloader.
   chroot "bootctl install"
   local uuid
-  uuid="$(blkid | grep $root | cut -d ' ' -f 2)"
+  uuid="$(blkid | grep $no6tem | cut -d ' ' -f 2)"
   printf '%s\n%s\n%s\n%s' "default arch.conf" "timeout 3"\
     "console-mode max" "editor no" > /mnt/boot/loader/loader.conf
   printf '%s\n%s\n%s\n%s\n%s' "title Arch Linux no6tem"\
@@ -127,9 +146,8 @@ base() {
     /mnt/boot/loader/entries/arch-fallback.conf
 
   # User.
-  chroot "useradd -m $user"
+  chroot "useradd -m -G video,systemd-journal $user"
   printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
-  chroot "usermod -aG video,systemd-journal $user"
   printf '\n%s' "Enter a password for root !"
   chroot "passwd"
   printf '\n%s' "Enter a password for $user !"
@@ -139,12 +157,18 @@ base() {
     "mkdir /home/$user/{dev,docs,downloads,music,pictures,public,videos}"
   chroot "chown -R $user:$user /home/$user/*"
 
+  # Swap file.
+  if [[ $swap_size != "false" ]]; then
+    chroot "mkswap -U clear --size $swap_size --file /no6tem_swap"
+    chroot "swapon /no6tem_swap"
+    printf '%s' "/no6tem_swap none swap defaults 0 0" >> /mnt/etc/fstab
+  fi
+
   # Reboot.
-  umount -R /mnt
-  swapoff "$swap"
-  printf '\n%s\n%s\n'\
-    "Note: Arch Linux base successfuly installed!"\
-    "Warning: REBOOT SYSTEM BEFORE NEXT STEP!"
+  umount -R /mnt &&
+    printf '\n%s\n%s\n'\
+      "Note: Arch Linux base successfuly installed!"\
+      "Warning: REBOOT THE SYSTEM BEFORE NEXT STEP!"
 }
 
 
@@ -289,7 +313,7 @@ dotfiles() {
 all() {
   printf '\n%s\n%s\n'\
     "Installing Arch Linux no6tem..."\
-    "Warning: be patient, this may take a while!"
+    "Note: you must be patient, this may take a while!"
   sleep 3s
   aur_helper
   firmware_modules
