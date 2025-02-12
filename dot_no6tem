@@ -23,6 +23,8 @@ printf -v usage '%s\n' "
   Install Arch Linux base:      bash no6tem install base
   
   # From Arch Linux
+  Install all steps below:      bash no6tem install all
+  ------------------------      ------------------------
   Install AUR Helper:           bash no6tem install aur_helper
   Install Firmware Modules:     bash no6tem install firmware_modules
   Install Core Utilities:       bash no6tem install core_utilities
@@ -64,11 +66,11 @@ ssd_manager() {
 
 base() {
   timedatectl set-timezone "$timezone"
+  chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
   
   # System.
   pacstrap -K /mnt base base-devel linux linux-firmware
   genfstab -U /mnt >> /mnt/etc/fstab
-  chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
 
   # Configure.
   ln -sf /mnt/usr/share/zoneinfo/"$timezone" /mnt/etc/localtime
@@ -123,7 +125,7 @@ base() {
   chroot "passwd"
   printf '\n%s' "Enter a password for $user !"
   chroot "passwd $user"
-  cp -rf no6tem dotfiles "/mnt/home/$user/"
+  cp no6tem "/mnt/home/$user/"
   chroot\
     "mkdir /home/$user/{dev,docs,downloads,music,pictures,public,videos}"
   chroot "chown -R $user:$user /home/$user/*"
@@ -275,6 +277,29 @@ dotfiles() {
   chsh -s /bin/nu
 }
 
+all() {
+  printf '/n%s/n'\
+    "Installing Arch Linux no6tem..."\
+    "Warning: be patient, this may take a while!"
+  sleep 3s
+  aur_helper
+  firmware_modules
+  core_utilities
+  intel_gpu_drivers
+  sound_system
+  multimedia_support
+  gui_libraries
+  themes_fonts
+  terminal_shell
+  file_manager
+  text_editor
+  user_apps
+  tiling_compositor
+  status_bar
+  login_manager
+  dotfiles
+}
+
 
 # Run the script
 #################
@@ -298,6 +323,7 @@ case "$@" in
   "install status_bar") status_bar ;;
   "install login_manager") login_manager ;;
   "install dotfiles") dotfiles ;;
+  "install all") all ;;
   *) printf '%s' "$usage"
 esac
 
