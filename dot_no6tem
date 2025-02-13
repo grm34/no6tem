@@ -73,7 +73,7 @@ ssd_manager() {
     mount /dev/no6tem/root /mnt
     mount --mkdir /dev/no6tem/home /mnt/home
   else
-    lvcreate -L 100%FREE no6tem -n root
+    lvcreate -l 100%FREE no6tem -n root
     mkfs.ext4 /dev/no6tem/root
     mount /dev/no6tem/root /mnt
   fi    
