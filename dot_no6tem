@@ -12,7 +12,7 @@ font="Lat2-Terminus16"
 boot="/dev/sda1"
 no6tem="/dev/sda2"
 single_root_partition="false"
-root_size="50G" # when single root partition is False.
+root_size="50G" # required if single root partition is False.
 swap_size="8G" # set it to "false" to disable swapfile.
 microcode="intel-ucode"
 boot_options="i915.enable_dpcd_backlight=1"
