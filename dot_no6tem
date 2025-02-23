@@ -209,7 +209,7 @@ terminal_shell() {
   paru --noconfirm --needed -S\
     kitty nushell starship vivid zellij btop broot exa duf dust bat\
     most git-delta chafa bandwhich neofetch macchina zoxide fzf procs\
-    bottom diskonaut kmon uutils-coreutils
+    bottom diskonaut kmon uutils-coreutils netscanner
 }
 
 file_manager() {
