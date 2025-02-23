@@ -59,7 +59,7 @@
   "theme.bar.menus.menu.clock.scaling": 100,
   "menus.clock.weather.key": "/home/keyzer/.config/weather_api_key.json",
   "theme.bar.location": "top",
-  "menus.transitionTime": 275,
+  "menus.transitionTime": 200,
   "theme.bar.buttons.dashboard.enableBorder": false,
   "bar.windowtitle.label": true,
   "bar.windowtitle.truncation": true,
