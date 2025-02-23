@@ -248,7 +248,8 @@ status_bar() {
   paru --noconfirm --needed -S\
     ags-hyprpanel-git libgtop bluez bluez-utils dart-sass swww python\
     wl-clipboard brightnessctl upowerpacman-contrib python-pywal\
-    power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder
+    power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder\
+    nm-connection-editor
   sudo sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
     /usr/share/hyprpanel/scripts/snapshot.sh
   sudo sed -i 's|Videos/Screencasts|videos/screencasts|g'\
