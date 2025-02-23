@@ -1,44 +1,40 @@
 #!/usr/bin/env bash
-# Arch Linux no6tem > by darkmaster @grm34.
+# no6tem > by darkmaster @grm34
 set -e
 
-# Settings.
-user="keyzer"
-host="no6tem"
-timezone="Europe/Paris"
-lang="en_US.UTF-8"
-keymap="fr"
-font="Lat2-Terminus16"
-boot="/dev/sda1"
-no6tem="/dev/sda2"
-single_root_partition="false"
-root_size="50G" # required if single root partition is False.
-swap_size="8G" # set it to "false" to disable swapfile.
-microcode="intel-ucode"
+
+# Settings
+user="keyzer" # username
+host="no6tem" # hostname
+timezone="Europe/Paris" # timezone
+lang="en_US.UTF-8" # language
+keymap="fr" # keyboard layout
+font="Lat2-Terminus16" # terminal font
+boot="/dev/sda1" # boot partition (EFI)
+no6tem="/dev/sda2" # no6tem partition (Linux LVM)
+single_root_partition="false" # homeless partition?
+root_size="50G" # root partition size
+swap_size="8G" # <false> to disable swapfile
+microcode="intel-ucode" # CPU microcode updates
 boot_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
 
-# Usage.
-printf -v usage '%s\n' "
-  Welcome in Arch Linux no6tem installer!
 
-  The only requirement to install base is to create 2 partitions:
-  (and edit the settings accordingly)
+# Usage
+printf -v usage '%s\n'\
+  "Welcome in Arch Linux no6tem installer!
 
-    boot: create 500MB partition and set the type to 'EFI' 
-    no6tem: create (free) partition and set the type to 'Linux LVM'
-
-  Follow then the instructions listed below:
-  (rebooting is necessary after the base install)
+  # Partitioning scheme
+  boot: create 500MB partition and set the type to 'EFI' 
+  no6tem: create (free) partition and set the type to 'Linux LVM'
 
   # From USB Live
   SSD Manager (LVM on LUKS):    bash no6tem prepare ssd
-  Install Arch Linux base:      bash no6tem install base
+  Install Arch Linux Base:      bash no6tem install base
 
   # From Arch Linux
   Install AUR Helper:           bash no6tem install aur_helper
   Install Firmware Modules:     bash no6tem install firmware_modules
-  Install Core Utilities:       bash no6tem install core_utilities
   Install Intel GPU Drivers:    bash no6tem install intel_gpu_drivers
   Install Sound System:         bash no6tem install sound_system
   Install Multimedia Support:   bash no6tem install multimedia_support
@@ -55,7 +51,6 @@ printf -v usage '%s\n' "
 
 
 # SSD Manager (LVM on LUKS)
-############################
 ssd_manager() {
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
@@ -63,7 +58,7 @@ ssd_manager() {
   cryptsetup open "$no6tem" no6tem
   pvcreate /dev/mapper/no6tem
   vgcreate no6tem /dev/mapper/no6tem
-  if [[ $single_root_partition == "false" ]]; then
+  if [[ ${single_root_partition,,} == "false" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
     mkfs.ext4 /dev/no6tem/root
@@ -79,19 +74,19 @@ ssd_manager() {
 }
 
 
-# Arch Linux base
-##################
+# Arch Linux Base
 base() {
   local root uuid folders
-  timedatectl set-timezone "$timezone"
   chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
-  
-  # System.
+  timedatectl set-timezone "$timezone"
+
+  # system
   pacstrap -K /mnt base base-devel linux linux-firmware
   genfstab -U /mnt >> /mnt/etc/fstab
 
-  # Configure.
+  # timezone, language, keyboard, hostname, pacman
   ln -sf /mnt/usr/share/zoneinfo/"$timezone" /mnt/etc/localtime
+  chroot "timedatectl set-timezone \"$timezone\""
   sed -i "s|#${lang} UTF-8|${lang} UTF-8|g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
@@ -106,18 +101,28 @@ base() {
   sed -i "s|#Color|Color|g" /mnt/etc/pacman.conf
   sed -i "s|Architecture = auto|Architecture = auto\nILoveCandy|g"\
     /mnt/etc/pacman.conf
-  sed -i "s|block filesystems|block encrypt lvm2 filesystems|g"\
-    /mnt/etc/mkinitcpio.conf
 
-  # Requirements.
+  # requirements
   chroot "pacman --needed --noconfirm -S\
     $microcode lvm2 reflector hdparm networkmanager man man-db"
   chroot "systemctl enable NetworkManager.service"
   chroot "systemctl enable reflector.timer"
   chroot "systemctl enable fstrim.timer"
+  sed -i "s|block filesystems|block encrypt lvm2 filesystems|g"\
+    /mnt/etc/mkinitcpio.conf
   chroot "mkinitcpio -P"
 
-  # Bootloader.
+  # swapfile
+  if [[ ${swap_size,,} != "false" ]]; then
+    chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
+    chroot "swapon /no6tem-swap"
+    printf '%s' "/no6tem-swap none swap defaults 0 0"\
+      >> /mnt/etc/fstab
+  fi
+
+  # bootloader
+  root="root=/dev/no6tem/root"
+  uuid="$(blkid | grep $no6tem | cut -d ' ' -f 2)"
   chroot "bootctl install"
   printf '%s\n%s\n%s\n%s'\
     "default arch.conf"\
@@ -125,8 +130,6 @@ base() {
     "console-mode max"\
     "editor no"\
     > /mnt/boot/loader/loader.conf
-  root="root=/dev/no6tem/root"
-  uuid="$(blkid | grep $no6tem | cut -d ' ' -f 2)"
   printf '%s\n%s\n%s\n%s\n%s'\
     "title Arch Linux no6tem"\
     "linux /vmlinuz-linux"\
@@ -141,32 +144,22 @@ base() {
   sed -i "s|initramfs-linux|initramfs-linux-fallback|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
 
-  # Swapfile.
-  if [[ $swap_size != "false" ]]; then
-    chroot "mkswap -U clear --size $swap_size --file /no6tem-swapfile"
-    chroot "swapon /no6tem-swapfile"
-    printf '%s' "/no6tem-swapfile none swap defaults 0 0"\
-      >> /mnt/etc/fstab
-  fi
-
-  # User.
+  # user
+  folders="dev,docs,downloads,music,pictures,public,videos"
   chroot "useradd -m -G video,systemd-journal $user"
   printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
-  printf '\n%s' "Enter a password for root !"
+  printf '\n%s' "Enter a password for root!"
   chroot "passwd"
-  printf '\n%s' "Enter a password for $user !"
+  printf '\n%s' "Enter a password for $user!"
   chroot "passwd $user"
   cp no6tem "/mnt/home/$user/"
-  folders="dev,docs,downloads,music,pictures,public,videos"
   chroot "mkdir /home/$user/{$folders}"
-  chroot "chown -R $user:$user /home/$user/*"
+  chroot "chown -R $user:$user /home/$user"
 }
 
 
-# no6tem dotfiles
-##################
+# Arch Linux no6tem
 aur_helper() {
-  sudo timedatectl set-timezone "$timezone"
   sudo pacman --noconfirm --needed -S git cmake rustup
   rustup default stable
   cd && git clone https://aur.archlinux.org/paru.git
@@ -179,10 +172,6 @@ firmware_modules() {
   sudo sed -i "s|consolefont block|consolefont numlock block|g"\
     /etc/mkinitcpio.conf
   sudo mkinitcpio -P
-}
-
-core_utilities() {
-  paru --noconfirm --needed -S uutils-coreutils
 }
 
 intel_gpu_drivers() {
@@ -220,7 +209,7 @@ terminal_shell() {
   paru --noconfirm --needed -S\
     kitty nushell starship vivid zellij btop broot exa duf dust bat\
     most git-delta chafa bandwhich neofetch macchina zoxide fzf procs\
-    bottom diskonaut kmon
+    bottom diskonaut kmon uutils-coreutils
 }
 
 file_manager() {
@@ -249,10 +238,10 @@ tiling_compositor() {
   paru --noconfirm --needed -S\
     hypridle hyprland hyprlock hyprpaper hyprpicker hyprpolkitagent\
     hyprsunset hyprsysteminfo xdg-desktop-portal-hyprland sirula-git
-    systemctl --user import-environment\
-      WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
-    dbus-update-activation-environment --systemd\
-      WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
+  sudo systemctl --user import-environment\
+    WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+  sudo dbus-update-activation-environment --systemd\
+    WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
 }
 
 status_bar() {
@@ -260,10 +249,10 @@ status_bar() {
     ags-hyprpanel-git libgtop bluez bluez-utils dart-sass swww python\
     wl-clipboard brightnessctl upowerpacman-contrib python-pywal\
     power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder
-    sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
-      /usr/share/hyprpanel/scripts/snapshot.sh
-    sed -i 's|Videos/Screencasts|videos/screencasts|g'\
-      /usr/share/hyprpanel/scripts/screen_record.sh
+  sudo sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
+    /usr/share/hyprpanel/scripts/snapshot.sh
+  sudo sed -i 's|Videos/Screencasts|videos/screencasts|g'\
+    /usr/share/hyprpanel/scripts/screen_record.sh
 }
 
 login_manager() {
@@ -273,15 +262,14 @@ login_manager() {
   printf '%s\n%s'\
     "command = \"tuigreet --user-menu --cmd Hyprland\""\
     "user = \"$user\"" | sudo tee -a /etc/greetd/config.toml
-  systemctl enable greetd.service
+  sudo systemctl enable greetd.service
 }
 
 dotfiles() {
   paru --noconfirm --needed -S github-cli chezmoi
   chezmoi init "$dotfiles"
   if [[ $user != "keyzer" ]]; then
-    grep -RiIl\
-      "keyzer" "/home/$user/.local/share/chezmoi"\
+    grep -RiIl "keyzer" "/home/$user/.local/share/chezmoi"\
       | xargs sed -i "s|keyzer|$user|g"
   fi
   chezmoi apply -v
@@ -292,20 +280,23 @@ dotfiles() {
   chsh -s /bin/nu
 }
 
-# no6tem manager
-#################
+
+# Run
 confirm() {
   read -p "Are you sure? " -n 1 -r
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     return 1
   else
-    echo; return 0
+    echo
+    return 0
   fi
 }
 
 case "$@" in
   "prepare ssd")
-    printf '%s\n' "Warning: ALL DATA WILL BE LOST!"
+    printf '%s\n%s\n'\
+      "Preparing $boot and $no6tem partitions..."\
+      "Warning: ALL DATA WILL BE LOST!"
     confirm && ssd_manager ;;
   "install base")
     confirm && base && printf '\n%s\n%s\n'\
@@ -313,7 +304,6 @@ case "$@" in
       "Warning: REBOOT SYSTEM BEFORE NEXT STEP!" ;;
   "install aur_helper") confirm && aur_helper ;;
   "install firmware_modules") confirm && firmware_modules ;;
-  "install core_utilities") confirm && core_utilities ;;
   "install intel_gpu_drivers") confirm && intel_gpu_drivers ;;
   "install sound_system") confirm && sound_system ;;
   "install multimedia_support") confirm && multimedia_support ;;
@@ -327,6 +317,6 @@ case "$@" in
   "install status_bar") confirm && status_bar ;;
   "install login_manager") confirm && login_manager ;;
   "install dotfiles") confirm && dotfiles ;;
-  *) printf '%s' "$usage" ;;
+  *) printf '%s' "$usage"
 esac
 

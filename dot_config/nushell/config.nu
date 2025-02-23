@@ -1,10 +1,10 @@
-# Arch Linux no6tem > by darkmaster @grm34.
+# no6tem > by darkmaster @grm34
 
-# Nushell config.
+# Nushell config
 $env.config.show_banner = false
 $env.config.buffer_editor = "helix"
 
-# Global vars.
+# Global vars
 load-env {
   "LANG": "en_US.UTF-8",
   "KEYMAP": "fr",
@@ -15,10 +15,10 @@ load-env {
   "DIFFPROG": "delta"
 }
 
-# PATH.
+# PATH
 $env.PATH ++= ["~/.cargo/bin"]
 
-# Aliases.
+# Aliases
 alias c = clear
 alias q = exit
 alias hx = helix
@@ -32,8 +32,9 @@ alias gs = git status
 alias gd = git diff
 alias net = ss -tulpn
 alias ch = chezmoi
+alias vimdiff = delta
 
-# Completions.
+# Completions
 use "~/dev/nu_scripts/custom-completions/adb/adb-completions.nu"
 use "~/dev/nu_scripts/custom-completions/bat/bat-completions.nu"
 use "~/dev/nu_scripts/custom-completions/cargo/cargo-completions.nu"
@@ -49,11 +50,11 @@ use "~/dev/nu_scripts/custom-completions/ssh/ssh-completions.nu"
 use "~/dev/nu_scripts/custom-completions/tar/tar-completions.nu"
 use "~/dev/nu_scripts/custom-completions/zellij/zellij-completions.nu"
 
-# Starship.
+# Starship
 mkdir ($nu.data-dir | path join "vendor/autoload")
 starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
 
-# Vivid.
+# Vivid
 $env.LS_COLORS = (vivid generate molokai | str trim)
 
 # Broot
