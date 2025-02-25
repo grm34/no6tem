@@ -223,7 +223,7 @@ text_editor() {
   paru --noconfirm --needed -S\
     helix bash-language-server hyprls-git jq-lsp tokei bash-completion\
     shellcheck pkgbuild-language-server yaml-language-server marksman\
-    rust-analyzer ruff
+    rust-analyzer ruff vscode-css-languageserver
   cargo install --git https://github.com/euclio/mdpls
 }
 
