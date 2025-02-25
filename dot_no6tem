@@ -216,7 +216,7 @@ file_manager() {
   paru --noconfirm --needed -S\
     yazi thunar catfish gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc tumbler\
     ffmpegthumbnailer thunar-volman thunar-archive-plugin xarchiver\
-    thunar-media-tags-plugin android-file-transfer xdg-user-dirs
+    thunar-media-tags-plugin android-file-transfer xdg-user-dirs 7zip
 }
 
 text_editor() {
