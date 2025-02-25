@@ -144,5 +144,6 @@
   "bar.customModules.storage.labelType": "percentage",
   "bar.customModules.storage.round": false,
   "bar.customModules.storage.leftClick": "kitty yazi",
-  "bar.customModules.storage.rightClick": "thunar"
+  "bar.customModules.storage.rightClick": "kitty diskonaut",
+  "bar.network.truncation_size": 14
 }
