@@ -2,8 +2,8 @@
 # Any customization should be done in ~/.gtkrc-2.0.mine instead.
 
 include "/home/keyzer/.gtkrc-2.0.mine"
-gtk-theme-name="Breeze-Dark"
-gtk-icon-theme-name="Adwaita"
+gtk-theme-name="Breeze"
+gtk-icon-theme-name="Papirus-Dark"
 gtk-font-name="Cantarell 9"
 gtk-cursor-theme-name="capitaine-cursors"
 gtk-cursor-theme-size=24
