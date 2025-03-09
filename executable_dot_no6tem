@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# no6tem > by darkmaster @grm34
+#!/bin/bash
+# darkmaster's no6tem @grm34
 set -e
 
 
@@ -22,14 +22,14 @@ dotfiles="https://github.com/grm34/no6tem"
 
 # Usage
 printf -v usage '%s\n'\
-  "Welcome in Arch Linux no6tem installer!
+  "Welcome in Arch Linux darkmaster's no6tem installer!
 
   # Partitioning scheme
-  boot: create 500MB partition and set the type to 'EFI' 
+  boot: create 1GB partition and set the type to 'EFI' 
   no6tem: create (free) partition and set the type to 'Linux LVM'
 
   # From USB Live
-  SSD Manager (LVM on LUKS):    bash no6tem prepare ssd
+  Drive Manager (LVM on LUKS):  bash no6tem prepare drive
   Install Arch Linux Base:      bash no6tem install base
 
   # From Arch Linux
@@ -43,21 +43,21 @@ printf -v usage '%s\n'\
   Install Terminal & Shell:     bash no6tem install terminal_shell
   Install File Manager:         bash no6tem install file_manager
   Install Text Editor:          bash no6tem install text_editor
-  Install User Applications:    bash no6tem install user_apps
   Install Tiling Compositor:    bash no6tem install tiling_compositor
   Install Status Bar:           bash no6tem install status_bar
   Install Login Manager:        bash no6tem install login_manager
+  Install User Applications:    bash no6tem install user_apps
   Install Dotfiles:             bash no6tem install dotfiles"
 
 
-# SSD Manager (LVM on LUKS)
-ssd_manager() {
+### Drive Manager ###
+drive_manager() {
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
   cryptsetup -v luksFormat "$no6tem"
-  cryptsetup open "$no6tem" no6tem
-  pvcreate /dev/mapper/no6tem
-  vgcreate no6tem /dev/mapper/no6tem
+  cryptsetup open "$no6tem" no6t3m
+  pvcreate /dev/mapper/no6t3m
+  vgcreate no6tem /dev/mapper/no6t3m
   if [[ ${single_root_partition,,} == "false" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
@@ -74,51 +74,42 @@ ssd_manager() {
 }
 
 
-# Arch Linux Base
+### Arch Linux Base ###
 base() {
   local root uuid folders
   chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
   timedatectl set-timezone "$timezone"
 
-  # system
-  pacstrap -K /mnt base base-devel linux linux-firmware
+  # essential packages
+  pacstrap -K /mnt base base-devel linux linux-firmware\
+    $microcode lvm2 reflector networkmanager man-db
+
+  # fstab
   genfstab -U /mnt >> /mnt/etc/fstab
 
-  # timezone, language, keyboard, hostname, pacman
+  # time
   ln -sf /mnt/usr/share/zoneinfo/"$timezone" /mnt/etc/localtime
-  chroot "timedatectl set-timezone \"$timezone\""
+  chroot "timedatectl set-timezone $timezone"
+  chroot "timedatectl set-ntp true"
+
+  # localization
   sed -i "s|#${lang} UTF-8|${lang} UTF-8|g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
   printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
     > /mnt/etc/vconsole.conf
-  printf '%s' "$host" > /mnt/etc/hostname
-  printf '%s\n%s\n%s'\
-    "127.0.0.1 localhost"\
-    "::1       localhost"\
-    "127.0.1.1 $host.localdomain $host"\
-    > /mnt/etc/hosts
-  sed -i "s|#Color|Color|g" /mnt/etc/pacman.conf
-  sed -i "s|Architecture = auto|Architecture = auto\nILoveCandy|g"\
-    /mnt/etc/pacman.conf
 
-  # requirements
-  chroot "pacman --needed --noconfirm -S\
-    $microcode lvm2 reflector hdparm networkmanager man man-db"
-  chroot "systemctl enable NetworkManager.service"
-  chroot "systemctl enable reflector.timer"
-  chroot "systemctl enable fstrim.timer"
+  # network
+  printf '%s' "$host" > /mnt/etc/hostname
+
+  # initramfs
   sed -i "s|block filesystems|block encrypt lvm2 filesystems|g"\
     /mnt/etc/mkinitcpio.conf
   chroot "mkinitcpio -P"
 
-  # swapfile
-  if [[ ${swap_size,,} != "false" ]]; then
-    chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
-    chroot "swapon /no6tem-swap"
-    printf '%s' "/no6tem-swap none swap defaults 0 0"\
-      >> /mnt/etc/fstab
-  fi
+  # root password
+  printf '\n%s' "Enter a password for root!"
+  chroot "passwd"
 
   # bootloader
   root="root=/dev/no6tem/root"
@@ -144,21 +135,38 @@ base() {
   sed -i "s|initramfs-linux|initramfs-linux-fallback|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
 
+  # pacman
+  sed -i "s|#Color|Color|g" /mnt/etc/pacman.conf
+  sed -i "s|Architecture = auto|Architecture = auto\nILoveCandy|g"\
+    /mnt/etc/pacman.conf
+
+  # services
+  chroot "systemctl enable NetworkManager.service"
+  chroot "systemctl enable reflector.timer"
+
+  # swapfile
+  if [[ ${swap_size,,} != "false" ]]; then
+    chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
+    chroot "swapon /no6tem-swap"
+    printf '\n%s' "/no6tem-swap none swap defaults 0 0"\
+      >> /mnt/etc/fstab
+  fi
+
   # user
-  folders="dev,docs,downloads,music,pictures,public,videos"
   chroot "useradd -m -G video,systemd-journal $user"
-  printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
-  printf '\n%s' "Enter a password for root!"
-  chroot "passwd"
   printf '\n%s' "Enter a password for $user!"
   chroot "passwd $user"
-  cp no6tem "/mnt/home/$user/"
+  printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
+  folders="dev,docs,downloads,music,pictures,public,videos"
   chroot "mkdir /home/$user/{$folders}"
-  chroot "chown -R $user:$user /home/$user"
+  chroot "chown $user:$user /home/$user"
+
+  # copy no6tem to user's home
+  cp no6tem "/mnt/home/$user/"
 }
 
 
-# Arch Linux no6tem
+### Arch Linux no6tem ###
 aur_helper() {
   sudo pacman --noconfirm --needed -S git cmake rustup
   rustup default stable
@@ -227,27 +235,21 @@ text_editor() {
   cargo install --git https://github.com/euclio/mdpls
 }
 
-user_apps() {
-  paru --noconfirm --needed -S\
-    cromite-bin transmission-gtk masterpdfeditor feh yt-dlp termusic\
-    tutanota-desktop-bin freetube-bin gimp sniffnet qemu-desktop\
-    gnome-boxes simplex-desktop-bin
-}
-
 tiling_compositor() {
   paru --noconfirm --needed -S\
     hypridle hyprland hyprlock hyprpaper hyprpicker hyprpolkitagent\
     hyprsunset hyprsysteminfo xdg-desktop-portal-hyprland sirula-git
   sudo systemctl --user import-environment\
     WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
-  sudo dbus-update-activation-environment --systemd\
-    WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
+  sudo systemctl --user daemon-reload
+  #dbus-update-activation-environment --systemd\
+  #  WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
 }
 
 status_bar() {
   paru --noconfirm --needed -S\
     ags-hyprpanel-git libgtop bluez bluez-utils dart-sass swww python\
-    wl-clipboard brightnessctl upowerpacman-contrib python-pywal\
+    wl-clipboard brightnessctl upower pacman-contrib python-pywal\
     power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder\
     nm-connection-editor
   sudo sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
@@ -266,6 +268,13 @@ login_manager() {
   sudo systemctl enable greetd.service
 }
 
+user_apps() {
+  paru --noconfirm --needed -S\
+    cromite-bin transmission-gtk masterpdfeditor feh yt-dlp termusic\
+    tutanota-desktop-bin freetube-bin gimp sniffnet qemu-desktop\
+    gnome-boxes simplex-desktop-bin
+}
+
 dotfiles() {
   paru --noconfirm --needed -S github-cli chezmoi
   chezmoi init "$dotfiles"
@@ -282,7 +291,7 @@ dotfiles() {
 }
 
 
-# Run
+### Main ###
 confirm() {
   read -p "Are you sure? " -n 1 -r
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -294,13 +303,13 @@ confirm() {
 }
 
 case "$@" in
-  "prepare ssd")
+  "prepare drive")
     printf '%s\n%s\n'\
       "Preparing $boot and $no6tem partitions..."\
       "Warning: ALL DATA WILL BE LOST!"
-    confirm && ssd_manager ;;
+    confirm && drive_manager ;;
   "install base")
-    confirm && base && printf '\n%s\n%s\n'\
+    confirm && base && printf '\n%s\n%s\n\n'\
       "Arch Linux base is successfuly installed!"\
       "Warning: REBOOT SYSTEM BEFORE NEXT STEP!" ;;
   "install aur_helper") confirm && aur_helper ;;
@@ -313,10 +322,10 @@ case "$@" in
   "install terminal_shell") confirm && terminal_shell ;;
   "install file_manager") confirm && file_manager ;;
   "install text_editor") confirm && text_editor ;;
-  "install user_apps") confirm && user_apps ;;
   "install tiling_compositor") confirm && tiling_compositor ;;
   "install status_bar") confirm && status_bar ;;
   "install login_manager") confirm && login_manager ;;
+  "install user_apps") confirm && user_apps ;;
   "install dotfiles") confirm && dotfiles ;;
   *) printf '%s' "$usage"
 esac

@@ -121,8 +121,8 @@ def "no6tem update" [] {
   }
   print "Updating chezmoi dotfiles..."
   for $entry in $dotfiles {
-      chezmoi add $entry
-      print $"  added ==> ($entry)"
+    chezmoi add $entry
+    print $"  added ==> ($entry)"
   }
   print "Everything is up to date!"
 }
