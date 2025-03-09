@@ -1,0 +1,52 @@
+config nu 
+helix .config/nushell/config.nu
+bash no6tem install tiling_compositor
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
+hx no6tem
+paru
+sudo timedatectl set-timezone Europe/Paris
+sudo timedatectl set-ntp true
+sudo timedatectl
+paru
+paru -Sc
+paru -Qdt
+paru -Rcsn autoconf-archive go just libngtcp2 patchelf python-build python_installer scdoc simdjson vala
+paru -Rcsn autoconf-archive go just libngtcp2 patchelf python-build python-installer scdoc simdjson vala
+paru -Sc
+paru -Qdt
+paru -Qqk
+hx /run/media/keyzer/android/_no6tem_/backup/github/github-recovery-codes.txt
+gh auth login
+duf
+hx no6tem
+no6tem update 
+hx .git/info/exclude
+hx .gitignore
+no6tem update 
+hx .git/info/exclude
+no6tem update 
+ls dot_config/nushell/
+cd
+mv .config/nushell/nu_scripts/ dev/
+config nu
+hx .git/info/exclude
+rm .gitignore
+cd
+no6tem push 
+no6tem update 
+ls dev/nu_scripts/
+cd .config/nushell/
+ls
+cd
+no6tem update 
+config nu 
+mv no6tem .no6tem
+hx .git/info/exclude
+cd
+mv dev/nu_scripts/ .config/nushell/
+no6tem update 
+mv .config/nushell/nu_scripts/ dev/
+no6tem update 
+no6tem push
+config nu 
+no6tem init
