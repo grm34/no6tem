@@ -148,7 +148,9 @@ base() {
   if [[ ${swap_size,,} != "false" ]]; then
     chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
     chroot "swapon /no6tem-swap"
-    printf '\n%s' "/no6tem-swap none swap defaults 0 0"\
+    printf '\n%s\n%s'\
+      "# swapfile"\
+      "/no6tem-swap none swap defaults 0 0"\
       >> /mnt/etc/fstab
   fi
 
@@ -156,7 +158,10 @@ base() {
   chroot "useradd -m -G video,systemd-journal $user"
   printf '\n%s' "Enter a password for $user!"
   chroot "passwd $user"
-  printf '\n%s' "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
+  printf '\n%s\n%s'\
+    "# no6tem user"\
+    "$user ALL=(ALL:ALL) ALL"\
+    >> /mnt/etc/sudoers
   folders="dev,docs,downloads,music,pictures,public,videos"
   chroot "mkdir /home/$user/{$folders}"
   chroot "chown $user:$user /home/$user"
