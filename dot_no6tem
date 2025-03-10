@@ -140,10 +140,6 @@ base() {
   sed -i "s|Architecture = auto|Architecture = auto\nILoveCandy|g"\
     /mnt/etc/pacman.conf
 
-  # services
-  chroot "systemctl enable NetworkManager.service"
-  chroot "systemctl enable reflector.timer"
-
   # swapfile
   if [[ $swap_size != "false" ]]; then
     chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
@@ -153,6 +149,10 @@ base() {
       "/no6tem-swap none swap defaults 0 0"\
       >> /mnt/etc/fstab
   fi
+
+  # services
+  chroot "systemctl enable NetworkManager.service"
+  chroot "systemctl enable reflector.timer"
 
   # user
   chroot "useradd -m -G video,systemd-journal $user"
@@ -166,7 +166,7 @@ base() {
   chroot "mkdir /home/$user/{$folders}"
   chroot "chown $user:$user /home/$user"
 
-  # copy no6tem to user's home
+  # copy no6tem to user's home...
   cp no6tem "/mnt/home/$user/"
 }
 
