@@ -2,7 +2,6 @@
 # darkmaster's no6tem @grm34
 set -e
 
-
 # Settings
 user="keyzer" # username
 host="no6tem" # hostname
@@ -18,7 +17,6 @@ swap_size="8G" # <false> to disable swapfile
 microcode="intel-ucode" # CPU microcode updates
 boot_options="i915.enable_dpcd_backlight=1"
 dotfiles="https://github.com/grm34/no6tem"
-
 
 # Usage
 printf -v usage '%s\n'\
