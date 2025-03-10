@@ -53,9 +53,9 @@ drive_manager() {
   mkfs.fat -F 32 "$boot"
   mkfs.ext4 "$no6tem"
   cryptsetup -v luksFormat "$no6tem"
-  cryptsetup open "$no6tem" no6t3m
-  pvcreate /dev/mapper/no6t3m
-  vgcreate no6tem /dev/mapper/no6t3m
+  cryptsetup open "$no6tem" no6tem
+  pvcreate /dev/mapper/no6tem
+  vgcreate no6tem /dev/mapper/no6tem
   if [[ ${single_root_partition,,} == "false" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
