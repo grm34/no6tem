@@ -94,7 +94,9 @@ base() {
   sed -i "s|#${lang} UTF-8|${lang} UTF-8|g" /mnt/etc/locale.gen
   chroot "locale-gen"
   printf '%s' "LANG=$lang" > /mnt/etc/locale.conf
-  printf '%s\n%s' "KEYMAP=$keymap" "FONT=$font"\
+  printf '%s\n%s'\
+    "KEYMAP=$keymap"\
+    "FONT=$font"\
     > /mnt/etc/vconsole.conf
 
   # network
