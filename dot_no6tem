@@ -56,7 +56,7 @@ drive_manager() {
   cryptsetup open "$no6tem" no6tem
   pvcreate /dev/mapper/no6tem
   vgcreate no6tem /dev/mapper/no6tem
-  if [[ ${single_root_partition,,} == "false" ]]; then
+  if [[ $single_root_partition == "false" ]]; then
     lvcreate -L "$root_size" no6tem -n root
     lvcreate -l 100%FREE no6tem -n home
     mkfs.ext4 /dev/no6tem/root
@@ -145,7 +145,7 @@ base() {
   chroot "systemctl enable reflector.timer"
 
   # swapfile
-  if [[ ${swap_size,,} != "false" ]]; then
+  if [[ $swap_size != "false" ]]; then
     chroot "mkswap -U clear --size $swap_size --file /no6tem-swap"
     chroot "swapon /no6tem-swap"
     printf '\n%s\n%s'\
