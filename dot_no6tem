@@ -247,8 +247,9 @@ tiling_compositor() {
   sudo systemctl --user import-environment\
     WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
   sudo systemctl --user daemon-reload
-  #dbus-update-activation-environment --systemd\
-  #  WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
+  # Must be done after first Hyprland boot... 
+  # dbus-update-activation-environment --systemd\
+  #   WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland
 }
 
 status_bar() {
