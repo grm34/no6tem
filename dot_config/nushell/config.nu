@@ -1,4 +1,4 @@
-# no6tem > by darkmaster @grm34
+# darkmaster's no6tem @grm34
 
 # Nushell config
 $env.config.show_banner = false
