@@ -130,7 +130,7 @@ base() {
     > /mnt/boot/loader/entries/arch.conf
   cp /mnt/boot/loader/entries/arch.conf\
     /mnt/boot/loader/entries/arch-fallback.conf
-  sed -i "s|Arch Linux|Arch Linux (fallback initramfs)|g"\
+  sed -i "s|Linux no6tem|Linux no6tem (fallback initramfs)|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
   sed -i "s|initramfs-linux|initramfs-linux-fallback|g"\
     /mnt/boot/loader/entries/arch-fallback.conf
@@ -257,7 +257,7 @@ status_bar() {
     ags-hyprpanel-git libgtop bluez bluez-utils dart-sass swww python\
     wl-clipboard brightnessctl upower pacman-contrib python-pywal\
     power-profiles-daemon grimblast-git matugen-bin gpu-screen-recorder\
-    nm-connection-editor
+    nm-connection-editor aylurs-gtk-shell-git python-gpustat
   sudo sed -i 's|Pictures/Screenshots|pictures/screenshots|g'\
     /usr/share/hyprpanel/scripts/snapshot.sh
   sudo sed -i 's|Videos/Screencasts|videos/screencasts|g'\
