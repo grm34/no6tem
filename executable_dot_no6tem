@@ -26,32 +26,32 @@ printf -v usage '%s\n'\
   "Welcome in Arch Linux darkmaster's no6tem installer!
 
   # Download no6tem
-  curl -L -O https://n9.cl/no6tem
+  curl -L -O https://n9.cl/no6tem /bin/no6tem
 
   # Partitioning scheme
   boot: create 1GB partition and set the type to 'EFI' 
   no6tem: create (free) partition and set the type to 'Linux LVM'
 
   # From USB Live
-  Drive Manager (LVM on LUKS):  bash no6tem prepare drive
-  Install Arch Linux Base:      bash no6tem install base
+  Drive Manager (LVM on LUKS):  no6tem prepare drive
+  Install Arch Linux Base:      no6tem install base
 
   # From Arch Linux
-  Install AUR Helper:           bash no6tem install aur_helper
-  Install Firmware Modules:     bash no6tem install firmware_modules
-  Install Intel GPU Drivers:    bash no6tem install intel_gpu_drivers
-  Install Sound System:         bash no6tem install sound_system
-  Install Multimedia Support:   bash no6tem install multimedia_support
-  Install GUI Libraries:        bash no6tem install gui_libraries
-  Install Themes & Fonts:       bash no6tem install themes_fonts
-  Install Terminal & Shell:     bash no6tem install terminal_shell
-  Install File Manager:         bash no6tem install file_manager
-  Install Text Editor:          bash no6tem install text_editor
-  Install Tiling Compositor:    bash no6tem install tiling_compositor
-  Install Status Bar:           bash no6tem install status_bar
-  Install Login Manager:        bash no6tem install login_manager
-  Install User Applications:    bash no6tem install user_apps
-  Install Dotfiles:             bash no6tem install dotfiles"
+  Install AUR Helper:           no6tem install aur_helper
+  Install Firmware Modules:     no6tem install firmware_modules
+  Install Intel GPU Drivers:    no6tem install intel_gpu_drivers
+  Install Sound System:         no6tem install sound_system
+  Install Multimedia Support:   no6tem install multimedia_support
+  Install GUI Libraries:        no6tem install gui_libraries
+  Install Themes & Fonts:       no6tem install themes_fonts
+  Install Terminal & Shell:     no6tem install terminal_shell
+  Install File Manager:         no6tem install file_manager
+  Install Text Editor:          no6tem install text_editor
+  Install Tiling Compositor:    no6tem install tiling_compositor
+  Install Status Bar:           no6tem install status_bar
+  Install Login Manager:        no6tem install login_manager
+  Install User Applications:    no6tem install user_apps
+  Install Dotfiles:             no6tem install dotfiles"
 
 
 ### Drive Manager ###
@@ -173,7 +173,7 @@ base() {
   chroot "chown $user:$user /home/$user"
 
   # copy no6tem to user's home...
-  cp no6tem "/mnt/home/$user/"
+  cp /bin/no6tem "/mnt/bin/no6tem"
 }
 
 

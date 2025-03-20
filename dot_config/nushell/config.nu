@@ -61,7 +61,7 @@ $env.LS_COLORS = (vivid generate molokai | str trim)
 use '/home/keyzer/.config/broot/launcher/nushell/br' *
 
 # [ no6tem dotfiles manager ]
-def no6tem [option: string] {
+def dotfiles [option: string] {
   if $option != "init|update|push" {
     print "Error: nu::parser::invalid_option"
     print "\nUse `--help` for more information."
@@ -69,14 +69,14 @@ def no6tem [option: string] {
 }
 
 # Initializes dotfiles repository (chezmoi). 
-def "no6tem init" [] {
+def "dotfiles init" [] {
   rm -rf $"($env.HOME)/.local/share/chezmoi"
   chezmoi init https://github.com/grm34/no6tem
   chezmoi apply -v  
 }
 
 # Updates no6tem dotfiles changes (local).
-def "no6tem update" [] {
+def "dotfiles update" [] {
   let dotfiles = [
     $"($env.HOME)/.no6tem"
     $"($env.HOME)/.bash_profile"
@@ -128,7 +128,7 @@ def "no6tem update" [] {
 }
 
 # Pushes no6tem dotfiles changes (github).
-def "no6tem push" [] {
+def "dotfiles push" [] {
   print "Pushing dotfiles changes..."
   chezmoi git -- add -A
   chezmoi git -- commit -m "auto-update"
