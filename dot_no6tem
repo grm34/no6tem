@@ -22,6 +22,9 @@ dotfiles="https://github.com/grm34/no6tem"
 printf -v usage '%s\n'\
   "Welcome in Arch Linux darkmaster's no6tem installer!
 
+  # Download no6tem
+  curl -L -O https://n9.cl/no6tem
+
   # Partitioning scheme
   boot: create 1GB partition and set the type to 'EFI' 
   no6tem: create (free) partition and set the type to 'Linux LVM'
