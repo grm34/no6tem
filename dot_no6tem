@@ -1,8 +1,9 @@
 #!/bin/bash
-# darkmaster's no6tem @grm34
-if ! grep -q archlinux /etc/os-release; then
-  printf '%s\n' "Arch Linux only!" && exit 1
+if ! grep -q -m 1 archlinux /etc/os-release; then
+  printf '%s\n' "Error: Arch Linux only!"; exit 1
 fi
+
+# darkmaster's no6tem @grm34
 set -e
 
 # Settings
