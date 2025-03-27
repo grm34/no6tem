@@ -80,7 +80,7 @@ drive_manager() {
 }
 
 
-### Arch Linux Base ###
+### Install Arch Linux Base ###
 base() {
   local root uuid folders
   chroot() { arch-chroot /mnt /bin/bash -c "$@"; }
@@ -180,7 +180,7 @@ base() {
 }
 
 
-### Arch Linux no6tem ###
+### Install no6tem Environment ###
 aur_helper() {
   sudo pacman --noconfirm --needed -S git cmake rustup
   rustup default stable
